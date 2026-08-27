@@ -74,7 +74,7 @@ class PackageWiringTest extends TestCase
         $this->assertSame(
             self::ALLOWED_HOST_IMPORTS,
             $found,
-            'ai-products host coupling changed. Shrinking it is the goal; widening it needs a documented reason in docs/AI_PACKAGES.md.'
+            'ai-products host coupling changed. Shrinking it is the goal; widening it needs a documented reason recorded with the change.'
         );
     }
 }

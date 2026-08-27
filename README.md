@@ -4,7 +4,9 @@ Product-domain AI content: `ProductContentRewriteService`,
 `ProductCategoryContentRewriteService`, and the `TranslateProductToLocale` /
 `TranslateProductCategoryToLocale` jobs.
 
-Part of the phaseb AI extraction. As-built reference: `docs/AI_PACKAGES.md`.
+Developed in the `core45/ai-packages` monorepo; this repository is a read-only
+split of it. The monorepo README describes how the packages relate to each
+other.
 
 ## Host coupling
 
@@ -12,7 +14,7 @@ The drop-in refactor put every host model behind `Core45\AiCore\ModelRegistry`
 and the seam contracts in `ai-core`'s `Contracts/` — this package imports zero
 `App\*` classes. `tests/PackageWiringTest.php` asserts that count is exactly
 zero (`ALLOWED_HOST_IMPORTS = []`); it may only stay at zero or shrink further,
-never widen without a documented reason in `docs/AI_PACKAGES.md`.
+never widen without a documented reason recorded alongside the change.
 
 That does not make the package pluggable with no host work: it still expects
 five host models registered under specific `ModelRegistry` keys and four seam
