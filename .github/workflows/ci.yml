@@ -19,6 +19,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # Both ends of the declared range. Without a committed lockfile — correct
+    # for a library — `composer install` behaves like `composer update` and
+    # always resolves to the top, so the constraints this package PUBLISHES were
+    # never the ones tested. The floor job is what makes `^13.0` / `^5.7` a
+    # claim rather than a hope.
+    strategy:
+      fail-fast: false
+      matrix:
+        dependencies: ['highest', 'lowest']
+
+    name: test (${{ matrix.dependencies }} deps)
+
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +63,12 @@ jobs:
           composer config --global --auth github-oauth.github.com "$TOKEN"
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: |
+          if [ "${{ matrix.dependencies }}" = "lowest" ]; then
+            composer update --prefer-lowest --prefer-dist --no-interaction --no-progress
+          else
+            composer update --prefer-dist --no-interaction --no-progress
+          fi
 
       - name: Tests
         run: vendor/bin/phpunit
