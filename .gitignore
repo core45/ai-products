@@ -1,0 +1,22 @@
+# This file exists INSIDE the package directory on purpose.
+#
+# Each package is published to its own repository with `git subtree split`, and
+# a split repo contains only the contents of packages/<name>/. The monorepo's
+# root .gitignore is not part of that subtree, so without this file a cloned
+# package repo ignores nothing at all: the first `composer install` leaves an
+# untracked vendor/ sitting in `git status`.
+#
+# `/vendor/` is also anchored at the root of the monorepo's ignore file, which
+# does not match packages/<name>/vendor/ — so this file is what keeps a
+# per-package `composer install` from being committed here too.
+
+/vendor/
+
+# A library publishes its constraints, not a resolved lockfile: the consuming
+# application's lock is the one that matters, and committing ours only invites
+# it to drift from what the constraints actually allow.
+composer.lock
+
+.phpunit.result.cache
+.phpunit.cache/
+.DS_Store

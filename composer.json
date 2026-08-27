@@ -4,6 +4,12 @@
     "type": "library",
     "version": "0.1.0",
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/core45/ai-core.git"
+        }
+    ],
     "require": {
         "php": "^8.4",
         "astrotomic/laravel-translatable": "^11.17",

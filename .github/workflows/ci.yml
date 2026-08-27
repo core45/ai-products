@@ -1,0 +1,57 @@
+name: CI
+
+# This workflow exists to give the standalone core45/ai-products repo
+# (published via `git subtree split` from this monorepo's
+# packages/ai-products/ directory) its own CI. Inside this monorepo it is
+# inert: GitHub Actions only reads workflow files under .github/workflows/ at
+# the repository root, so this file has no effect here. All paths below are
+# relative to the package directory itself, because in the split repo the
+# package root IS the repo root.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # This package depends on one or more sibling core45/ai-* packages, and
+      # those repositories are PRIVATE. A workflow's built-in GITHUB_TOKEN is
+      # scoped to the repository it runs in and cannot clone a sibling, so
+      # `composer install` below fails with "It's a private package and you
+      # forgot to add a custom repository to find it" — a message that blames
+      # the composer.json rather than the missing credential.
+      #
+      # Set a repository or organisation secret named COMPOSER_GITHUB_TOKEN to a
+      # PAT (or GitHub App installation token) with read access to the other
+      # core45/ai-* repositories. The check below fails loudly when it is absent
+      # rather than letting composer produce the misleading error.
+      - name: Authenticate Composer for the private sibling packages
+        env:
+          TOKEN: ${{ secrets.COMPOSER_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Secret COMPOSER_GITHUB_TOKEN is not set. This package depends on private core45/ai-* repositories, which the default GITHUB_TOKEN cannot read. Add a PAT with read access to those repos as COMPOSER_GITHUB_TOKEN."
+            exit 1
+          fi
+          composer config --global --auth github-oauth.github.com "$TOKEN"
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Tests
+        run: vendor/bin/phpunit
