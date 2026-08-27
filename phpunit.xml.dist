@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    bootstrap is RELATIVE TO THIS FILE'S DIRECTORY, and this directory is the
+    root of the published repository (each package is split out with
+    `git subtree split`). "../../vendor/autoload.php" resolves to the
+    monorepo's vendor, which does not exist in the split repo — PHPUnit exits
+    with "Cannot open bootstrap script" before running a single test.
+
+    It is easy to miss: running phpunit from inside the monorepo makes the
+    ../../ path resolve, so the suite passes there while being broken
+    everywhere it actually ships. Do not "fix" this back.
+-->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="../../vendor/autoload.php"
+         bootstrap="vendor/autoload.php"
          colors="true"
 >
     <testsuites>

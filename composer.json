@@ -2,7 +2,6 @@
     "name": "core45/ai-products",
     "description": "Product AI content services: product and category rewrite services and translation jobs.",
     "type": "library",
-    "version": "0.1.0",
     "license": "MIT",
     "repositories": [
         {
