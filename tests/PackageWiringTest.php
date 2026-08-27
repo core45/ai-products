@@ -14,25 +14,25 @@ use PHPUnit\Framework\Attributes\Test;
 class PackageWiringTest extends TestCase
 {
     /**
-     * The host classes this package is ALLOWED to import. This is the
-     * documented limitation from docs/AI_PACKAGES.md in executable form:
-     * ai-products is organised as a package but is not yet reusable, because
-     * it operates directly on the consuming app's product models.
+     * The host classes this package is allowed to import: none.
      *
-     * This list may only SHRINK. Widening it means the package got MORE
-     * host-bound, which is the opposite of the extraction's direction.
+     * This list used to name seven `App\Models\*` classes, recording the
+     * documented limitation that ai-products operated directly on the consuming
+     * app's product models and so was packaged but not actually reusable. That
+     * is no longer true — the drop-in refactor put every one of them behind
+     * `ModelRegistry` and the contracts in ai-core, and the measured count is
+     * now zero.
+     *
+     * Kept as an exact assertion rather than deleted. A ceiling that no longer
+     * binds is not a weaker gate, it is no gate: at seven it would keep passing
+     * if all seven imports came back. At zero, any host import fails this test.
+     *
+     * If one is genuinely needed, the answer is a contract in
+     * `ai-core/src/Contracts/`, not an entry added here.
      *
      * @var list<string>
      */
-    private const ALLOWED_HOST_IMPORTS = [
-        'App\Models\ContentArchetype',
-        'App\Models\Product',
-        'App\Models\ProductCategory',
-        'App\Models\ProductCategoryTranslation',
-        'App\Models\ProductTranslation',
-        'App\Models\TranslationLock',
-        'App\Models\User',
-    ];
+    private const ALLOWED_HOST_IMPORTS = [];
 
     #[Test]
     public function the_package_boots_standalone(): void
