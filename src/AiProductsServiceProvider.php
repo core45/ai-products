@@ -32,28 +32,28 @@ class AiProductsServiceProvider extends ServiceProvider
      * It looks like drift, but changing it here would restyle the admin table as
      * a side effect of a refactor, so it is preserved.
      */
-    public function register(): void
+    public function boot(): void
     {
-        $this->app->resolving(PromptKeyRegistry::class, static function (PromptKeyRegistry $registry): void {
-            $registry->registerMany([
-                'product_rewrite_system' => [
-                    'label' => 'Product Content Rewrite System Prompt',
-                    'color' => 'warning',
-                    'template' => 'rewrite.field_rewrite',
-                ],
-                'product_category_rewrite_system' => [
-                    'label' => 'Product Category Content Rewrite System Prompt',
-                    'template' => 'rewrite.field_rewrite',
-                ],
-                'product_seo_system' => [
-                    'label' => 'Product SEO Generation System Prompt',
-                    'template' => 'rewrite.seo_field',
-                ],
-                'product_category_seo_system' => [
-                    'label' => 'Product Category SEO Generation System Prompt',
-                    'template' => 'rewrite.seo_field',
-                ],
-            ]);
-        });
+        $registry = $this->app->make(PromptKeyRegistry::class);
+
+        $registry->registerMany([
+            'product_rewrite_system' => [
+                'label' => 'Product Content Rewrite System Prompt',
+                'color' => 'warning',
+                'template' => 'rewrite.field_rewrite',
+            ],
+            'product_category_rewrite_system' => [
+                'label' => 'Product Category Content Rewrite System Prompt',
+                'template' => 'rewrite.field_rewrite',
+            ],
+            'product_seo_system' => [
+                'label' => 'Product SEO Generation System Prompt',
+                'template' => 'rewrite.seo_field',
+            ],
+            'product_category_seo_system' => [
+                'label' => 'Product Category SEO Generation System Prompt',
+                'template' => 'rewrite.seo_field',
+            ],
+        ]);
     }
 }
