@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Core45\AiProducts\Tests;
 
 use Core45\AiCore\Contracts\GeneratesContentMedia;
+use Core45\AiCore\Support\PromptKeyRegistry;
 use Core45\AiProducts\Services\ProductContentRewriteService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use PHPUnit\Framework\Attributes\Test;
@@ -50,6 +51,17 @@ class FreshInstallBindingsTest extends TestCase
             $resolutions,
             'The scanner found no container resolutions at all. That is a broken scanner, '
             .'not a clean package — this gate would then pass while measuring nothing.',
+        );
+
+        // Pins the `->make()` form specifically. The first version of this
+        // scanner matched only `app()` and `resolve()`, so this package's
+        // `$this->app->make(PromptKeyRegistry::class)` was silently dropped and
+        // the gate reported success over a partial scan. `assertNotSame([])`
+        // above cannot catch that — it only sees a scan that found nothing.
+        $this->assertArrayHasKey(
+            PromptKeyRegistry::class,
+            $resolutions,
+            'The scanner no longer sees `$this->app->make()`, so its coverage is partial again.',
         );
 
         foreach ($resolutions as $class => $site) {
@@ -103,9 +115,19 @@ class FreshInstallBindingsTest extends TestCase
     }
 
     /**
-     * Map every `app(Foo::class)` / `resolve(Foo::class)` in the tree to the
-     * FQCN its file imported, so the assertions above run against real class
-     * names rather than short ones.
+     * Map every container resolution in the tree to the FQCN its file
+     * imported, so the assertions above run against real class names rather
+     * than short ones.
+     *
+     * Three forms are matched, and the third was missing at first: `app()`,
+     * `resolve()`, and `->make()`. Both of these packages resolve
+     * `PromptKeyRegistry` through `$this->app->make()` in their service
+     * providers, so the original two-form scanner silently dropped a real
+     * resolution — and a scanner that silently drops resolutions is the exact
+     * failure the `assertNotSame([], ...)` canary above cannot catch, because
+     * that canary only sees a scan that found NOTHING, never one that found
+     * some. Aliased (`use X as Y;`) and grouped (`use A\{B, C};`) imports are
+     * resolved for the same reason.
      *
      * @return array<class-string, string> FQCN => the file:line it was found at
      */
@@ -122,16 +144,13 @@ class FreshInstallBindingsTest extends TestCase
         foreach ($files as $file) {
             $source = (string) file_get_contents($file->getPathname());
 
-            // Short name => FQCN, from this file's own `use` statements.
-            preg_match_all('/^use\s+([A-Za-z0-9_\\\\]+);/m', $source, $imports);
-            $aliases = [];
-            foreach ($imports[1] as $fqcn) {
-                $aliases[substr((string) strrchr('\\'.$fqcn, '\\'), 1)] = $fqcn;
-            }
+            $aliases = $this->importedClassNames($source);
 
             $lines = explode("\n", $source);
             foreach ($lines as $index => $line) {
-                if (preg_match_all('/\b(?:app|resolve)\(\s*([A-Za-z0-9_\\\\]+)::class/', $line, $matches) === 0) {
+                $pattern = '/(?:\b(?:app|resolve)\(|->make\()\s*([A-Za-z0-9_\\\\]+)::class/';
+
+                if (preg_match_all($pattern, $line, $matches) === 0) {
                     continue;
                 }
 
@@ -145,5 +164,40 @@ class FreshInstallBindingsTest extends TestCase
         }
 
         return $found;
+    }
+
+    /**
+     * Short name => FQCN for one file's `use` statements, covering plain,
+     * aliased and grouped imports.
+     *
+     * @return array<string, string>
+     */
+    private function importedClassNames(string $source): array
+    {
+        $aliases = [];
+
+        // use A\B\C;  and  use A\B\C as D;
+        preg_match_all('/^use\s+([A-Za-z0-9_\\\\]+)(?:\s+as\s+([A-Za-z0-9_]+))?\s*;/mi', $source, $plain, PREG_SET_ORDER);
+        foreach ($plain as $match) {
+            $fqcn = $match[1];
+            $short = $match[2] ?? substr((string) strrchr('\\'.$fqcn, '\\'), 1);
+            $aliases[$short] = $fqcn;
+        }
+
+        // use A\B\{C, D as E};
+        preg_match_all('/^use\s+([A-Za-z0-9_\\\\]+\\\\)\{([^}]+)\}\s*;/mi', $source, $grouped, PREG_SET_ORDER);
+        foreach ($grouped as $group) {
+            foreach (explode(',', $group[2]) as $member) {
+                if (preg_match('/^\s*([A-Za-z0-9_\\\\]+)(?:\s+as\s+([A-Za-z0-9_]+))?\s*$/i', $member, $parts) !== 1) {
+                    continue;
+                }
+
+                $fqcn = $group[1].$parts[1];
+                $short = $parts[2] ?? substr((string) strrchr('\\'.$fqcn, '\\'), 1);
+                $aliases[$short] = $fqcn;
+            }
+        }
+
+        return $aliases;
     }
 }
