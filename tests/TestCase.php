@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Core45\AiProducts\Tests;
 
+use Composer\Autoload\ClassLoader;
 use Core45\AiCore\AiCoreServiceProvider;
 use Core45\AiProducts\AiProductsServiceProvider;
 use Orchestra\Testbench\TestCase as OrchTestCase;
+
+/** @var ClassLoader $loader */
+$loader = require __DIR__.'/../vendor/autoload.php';
+$loader->addPsr4('Core45\\AiCore\\', __DIR__.'/../../ai-core/src', true);
 
 /**
  * D12 two-layer testing: per-package Testbench harness. Boots ONLY this
